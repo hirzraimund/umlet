@@ -13,6 +13,7 @@ import com.baselet.element.facet.common.LayerFacet;
 import com.baselet.element.facet.common.LineWidthFacet;
 import com.baselet.element.settings.SettingsManualResizeTop;
 
+// the class is abstract since different implementations are needed for the desktop and GWT platform
 public abstract class CustomElement extends NewGridElement {
 
 	@Override
