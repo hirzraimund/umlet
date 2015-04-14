@@ -47,4 +47,6 @@ public interface Resources extends ClientBundle {
 	@Source("Plots.uxf")
 	TextResource Plots();
 
+	@Source("CustomJSScript.uxf")
+	TextResource CustomJSScript();
 }
