@@ -48,7 +48,7 @@ public class CustomDrawingFacet extends Facet {
 		}
 		else {
 			try {
-				System.out.println(String.format("Parsing string: '%s'", line));
+				// System.out.println(String.format("Parsing string: '%s'", line));
 				CustomDrawingParserLexer lexer = new CustomDrawingParserLexer(new ANTLRInputStream(line));
 				CommonTokenStream tokens = new CommonTokenStream(lexer);
 				new CustomDrawingParserImpl(tokens, state.getGridElementSize().getWidth(), state.getGridElementSize().getHeight(), state.getDrawer()).parse();

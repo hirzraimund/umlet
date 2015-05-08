@@ -15,9 +15,12 @@
 
 	<!-- Other module inherits -->
 
+	<inherits name="org.antlr.v4.runtime.antlr4-annotations" />
+	<inherits name="org.antlr.v4.antlr4-runtime" />
+
 	<!-- BaseletElements (shared Baselet resources) -->
 	<inherits name="com.BaseletElements" />
-
+	
 	<!-- UiBinder module. -->
 	<inherits name="com.google.gwt.uibinder.UiBinder" />
 
