@@ -12,6 +12,7 @@ import org.apache.log4j.Logger;
 
 import com.baselet.control.enums.AlignHorizontal;
 import com.baselet.control.enums.FormatLabels;
+import com.baselet.control.enums.LineType;
 import com.baselet.control.enums.Priority;
 import com.baselet.diagram.draw.DrawHandler;
 import com.baselet.diagram.draw.helper.ColorOwn;
@@ -53,18 +54,21 @@ public class CustomDrawingFacet extends Facet {
 		}
 		else {
 			line = line.trim();
-			boolean found = false;
-			for (DrawMethod drawMethod : supportedDrawingMethods)
+			if (!line.startsWith("//") && !line.isEmpty())
 			{
-				if (line.startsWith(drawMethod.name + '(') && line.endsWith(")"))
+				boolean found = false;
+				for (DrawMethod drawMethod : supportedDrawingMethods)
 				{
-					found = true;
-					drawMethod.parseLine(state.getDrawer(), line);
-					break;
+					if (line.startsWith(drawMethod.name + '(') && line.contains(")"))
+					{
+						found = true;
+						drawMethod.parseLine(state.getDrawer(), line);
+						break;
+					}
 				}
-			}
-			if (!found && !line.isEmpty() && !line.startsWith("//")) {
-				throw new RuntimeException(FormatLabels.BOLD.getValue() + "Invalid value:" + FormatLabels.BOLD.getValue() + " '" + line + "'\nNo custom drawing command with this name was found.");
+				if (!found) {
+					throw new RuntimeException(FormatLabels.BOLD.getValue() + "Invalid value:" + FormatLabels.BOLD.getValue() + " '" + line + "'\nNo custom drawing command with this name was found.");
+				}
 			}
 		}
 	}
@@ -85,7 +89,7 @@ public class CustomDrawingFacet extends Facet {
 	}
 
 	DrawMethod[] supportedDrawingMethods = {
-			new DrawMethod("drawRectangle", new DrawMethod.ParameterType[] { DOUBLE, DOUBLE, DOUBLE, DOUBLE }, true, true)
+			new DrawMethod("drawRectangle", new DrawMethod.ParameterType[] { DOUBLE, DOUBLE, DOUBLE, DOUBLE }, new DrawMethod.Setting[] { DrawMethod.fg, DrawMethod.bg, DrawMethod.lt, DrawMethod.lw })
 			{
 
 				@Override
@@ -94,7 +98,7 @@ public class CustomDrawingFacet extends Facet {
 				}
 
 			},
-			new DrawMethod("drawLine", new DrawMethod.ParameterType[] { DOUBLE, DOUBLE, DOUBLE, DOUBLE }, false, true)
+			new DrawMethod("drawLine", new DrawMethod.ParameterType[] { DOUBLE, DOUBLE, DOUBLE, DOUBLE }, new DrawMethod.Setting[] { DrawMethod.fg, DrawMethod.lt, DrawMethod.lw })
 			{
 
 				@Override
@@ -103,7 +107,7 @@ public class CustomDrawingFacet extends Facet {
 				}
 
 			},
-			new DrawMethod("drawArc", new DrawMethod.ParameterType[] { DOUBLE, DOUBLE, DOUBLE, DOUBLE, DOUBLE, DOUBLE, BOOL }, true, true)
+			new DrawMethod("drawArc", new DrawMethod.ParameterType[] { DOUBLE, DOUBLE, DOUBLE, DOUBLE, DOUBLE, DOUBLE, BOOL }, new DrawMethod.Setting[] { DrawMethod.fg, DrawMethod.bg, DrawMethod.lt, DrawMethod.lw })
 			{
 
 				@Override
@@ -112,7 +116,7 @@ public class CustomDrawingFacet extends Facet {
 				}
 
 			},
-			new DrawMethod("drawCircle", new DrawMethod.ParameterType[] { DOUBLE, DOUBLE, DOUBLE }, true, true)
+			new DrawMethod("drawCircle", new DrawMethod.ParameterType[] { DOUBLE, DOUBLE, DOUBLE }, new DrawMethod.Setting[] { DrawMethod.fg, DrawMethod.bg, DrawMethod.lt, DrawMethod.lw })
 			{
 
 				@Override
@@ -121,7 +125,7 @@ public class CustomDrawingFacet extends Facet {
 				}
 
 			},
-			new DrawMethod("drawEllipse", new DrawMethod.ParameterType[] { DOUBLE, DOUBLE, DOUBLE, DOUBLE }, true, true)
+			new DrawMethod("drawEllipse", new DrawMethod.ParameterType[] { DOUBLE, DOUBLE, DOUBLE, DOUBLE }, new DrawMethod.Setting[] { DrawMethod.fg, DrawMethod.bg, DrawMethod.lt, DrawMethod.lw })
 			{
 
 				@Override
@@ -130,7 +134,7 @@ public class CustomDrawingFacet extends Facet {
 				}
 
 			},
-			new DrawMethod("drawRectangleRound", new DrawMethod.ParameterType[] { DOUBLE, DOUBLE, DOUBLE, DOUBLE, DOUBLE }, true, true)
+			new DrawMethod("drawRectangleRound", new DrawMethod.ParameterType[] { DOUBLE, DOUBLE, DOUBLE, DOUBLE, DOUBLE }, new DrawMethod.Setting[] { DrawMethod.fg, DrawMethod.bg, DrawMethod.lt, DrawMethod.lw })
 			{
 
 				@Override
@@ -139,7 +143,7 @@ public class CustomDrawingFacet extends Facet {
 				}
 
 			},
-			new DrawMethod("drawText", new DrawMethod.ParameterType[] { STRING, DOUBLE, DOUBLE, ALIGNMENT }, false, true) {
+			new DrawMethod("drawText", new DrawMethod.ParameterType[] { STRING, DOUBLE, DOUBLE, ALIGNMENT }, new DrawMethod.Setting[] { DrawMethod.fg }) {
 
 				@Override
 				protected void draw(DrawHandler drawHandler, Object[] parameters) {
@@ -160,91 +164,221 @@ public class CustomDrawingFacet extends Facet {
 			DOUBLE, BOOL, STRING, ALIGNMENT
 		}
 
+		static final Setting fg = new Setting("fg=") {
+
+			@Override
+			RecRunnable parseValue(String value, final DrawHandler drawHandler, final RecRunnable inner) {
+
+				final ColorOwn newColor = ColorOwn.forString(value, Transparency.FOREGROUND);
+
+				// TODO Auto-generated method stub
+				return new RecRunnable(inner) {
+
+					@Override
+					public void run() {
+						ColorOwn oldColor = drawHandler.getForegroundColor();
+						drawHandler.setForegroundColor(newColor);
+						runInner();
+						drawHandler.setForegroundColor(oldColor);
+					}
+				};
+			}
+		};
+		static final Setting bg = new Setting("bg=") {
+
+			@Override
+			RecRunnable parseValue(String value, final DrawHandler drawHandler, final RecRunnable inner) {
+
+				final ColorOwn newColor = ColorOwn.forString(value, Transparency.BACKGROUND);
+
+				// TODO Auto-generated method stub
+				return new RecRunnable(inner) {
+
+					@Override
+					public void run() {
+						ColorOwn oldColor = drawHandler.getBackgroundColor();
+						drawHandler.setBackgroundColor(newColor);
+						runInner();
+						drawHandler.setBackgroundColor(oldColor);
+					}
+				};
+			}
+		};
+		static final Setting lt = new Setting("lt=") {
+
+			@Override
+			RecRunnable parseValue(String value, final DrawHandler drawHandler, final RecRunnable inner) {
+				final LineType newLineType;
+
+				if (value.equals("-")) {
+					newLineType = LineType.SOLID;
+				}
+				else if (value.equals(".")) {
+					newLineType = LineType.DASHED;
+				}
+				else if (value.equals("..")) {
+					newLineType = LineType.DOTTED;
+				}
+				else if (value.equals("=")) {
+					newLineType = LineType.DOUBLE;
+				}
+				else if (value.equals(":")) {
+					newLineType = LineType.DOUBLE_DASHED;
+				}
+				else if (value.equals("::")) {
+					newLineType = LineType.DOUBLE_DOTTED;
+				}
+				else {
+					throw new RuntimeException("Line type can only be one of SOLID(\"-\"), DASHED(\".\"), DOTTED(\"..\"), DOUBLE(\"=\"), DOUBLE_DASHED(\":\"), DOUBLE_DOTTED(\"::\")");
+				}
+				// TODO Auto-generated method stub
+				return new RecRunnable(inner) {
+
+					@Override
+					public void run() {
+						LineType oldLineType = drawHandler.getLineType();
+						drawHandler.setLineType(newLineType);
+						runInner();
+						drawHandler.setLineType(oldLineType);
+					}
+				};
+			}
+		};
+		static final Setting lw = new Setting("lw=") {
+
+			@Override
+			RecRunnable parseValue(String value, final DrawHandler drawHandler, final RecRunnable inner) {
+				final double newLw;
+				try {
+					newLw = Double.parseDouble(value);
+				} catch (NumberFormatException e) {
+					throw new RuntimeException("Line width must be a number. '" + value + "' couldn't be parsed.");
+				}
+
+				// TODO Auto-generated method stub
+				return new RecRunnable(inner) {
+
+					@Override
+					public void run() {
+						double oldLw = drawHandler.getLineWidth();
+						drawHandler.setLineWidth(newLw);
+						runInner();
+						drawHandler.setLineWidth(oldLw);
+					}
+				};
+			}
+		};
+
 		final String name;
 		/**
 		 * without background- or foregroundcolor
 		 */
 		final ParameterType[] parameterList;
-		final boolean supportsBackgroundColor;
-		final boolean supportsForegroundColor;
+		final Setting[] supportedSettings;
 
-		public DrawMethod(String name, ParameterType[] parameterList, boolean supportsBackgroundColor, boolean supportsForegroundColor) {
+		public DrawMethod(String name, ParameterType[] parameterList, Setting[] supportedSettings) {
 			super();
 			this.name = name;
 			this.parameterList = parameterList;
-			this.supportsBackgroundColor = supportsBackgroundColor;
-			this.supportsForegroundColor = supportsForegroundColor;
+			this.supportedSettings = supportedSettings;
 		}
 
 		void parseLine(DrawHandler drawHandler, String line)
 		{
 			if (line.startsWith(name))
 			{
+				int lastClosingBracket = line.lastIndexOf(')');
 				// remove method name an parentheses
-				String[] parameters = line.substring(name.length() + 1, line.length() - 1).split(",");
-				Object[] parsedParameters = new Object[parameterList.length];
-				if (parameters.length >= parameterList.length &&
-					parameters.length <= parameterList.length + (supportsBackgroundColor ? 1 : 0) + (supportsForegroundColor ? 1 : 0))
+				String[] parameters = splitAtComma(line.substring(name.length() + 1, lastClosingBracket));
+				if (parameters.length == parameterList.length)
 				{
-					int i;
-					for (i = 0; i < parameterList.length; i++)
-					{
-						parsedParameters[i] = parse(parameterList[i], parameters[i].trim());
-					}
-					ColorOwn fg = null;
-					ColorOwn bg = null;
-					if (i < parameters.length && supportsForegroundColor)
-					{
-						// foregroundcolor
-						fg = ColorOwn.forString(parameters[i].trim(), Transparency.FOREGROUND);
-						if (fg == null)
-						{
-							// TODO exc
-						}
-						i++;
-					}
-					if (i < parameters.length)
-					{
-						// backgroundcolor
-						bg = ColorOwn.forString(parameters[i].trim(), Transparency.BACKGROUND);
-						if (bg == null)
-						{
-							// TODO exc
-						}
-						i++;
-					}
-					if (fg != null)
-					{
-						if (bg != null)
-						{
-							drawWithFgBg(drawHandler, fg, bg, parsedParameters);
-						}
-						else
-						{
-							drawWithFg(drawHandler, fg, parsedParameters);
-						}
-					}
-					else
-					{
-						if (bg != null)
-						{
-							drawWithBg(drawHandler, bg, parsedParameters);
-						}
-						else
-						{
-							draw(drawHandler, parsedParameters);
-						}
-					}
+					parseSettings(drawHandler, line.substring(lastClosingBracket + 1).trim(), parseCommand(drawHandler, parameters));
 				}
 				else
 				{
 					// parameters count is mismatching
+					throw new RuntimeException("The drawing command '" + name + "' expectes exactly " + parameterList.length + " parameters.");
 				}
 			}
 			else
 			{
 				// should never happen
 			}
+		}
+
+		private String[] splitAtComma(String str) {
+			LinkedList<String> ret = new LinkedList<String>();
+			boolean quotes = false;
+			boolean prevEscapeChar = false;
+			boolean escapeChar = false;
+			int start = 0;
+			int i;
+			for (i = 0; i < str.length(); i++) {
+				escapeChar = false;
+				if (str.charAt(i) == '\\') {
+					// only if the previous char wasn't \ it is an escape char
+					if (!prevEscapeChar) {
+						escapeChar = true;
+					}
+				}
+				else {
+					if (!quotes) {
+						if (str.charAt(i) == ',') {
+							ret.add(str.substring(start, i));
+							start = i + 1;
+						}
+						else if (str.charAt(i) == '"' && !prevEscapeChar) {
+							quotes = true;
+						}
+					}
+					else {
+						if (str.charAt(i) == '"' && !prevEscapeChar) {
+							quotes = false;
+						}
+					}
+				}
+				prevEscapeChar = escapeChar;
+			}
+			if (i > start) {
+				ret.add(str.substring(start, i));
+			}
+			return ret.toArray(new String[0]);
+		}
+
+		private RecRunnable parseCommand(final DrawHandler drawHandler, String[] parameters) {
+			final Object[] parsedParameters = new Object[parameters.length];
+			int i;
+			for (i = 0; i < parameterList.length; i++)
+			{
+				parsedParameters[i] = parse(parameterList[i], parameters[i].trim());
+			}
+			return new RecRunnable(null) {
+				@Override
+				public void run() {
+					draw(drawHandler, parsedParameters);
+				}
+			};
+		}
+
+		private void parseSettings(DrawHandler drawHandler, String settingsStrList, RecRunnable drawCmd) {
+			// TODO
+			if (!settingsStrList.isEmpty()) {
+				String[] settingsList = settingsStrList.split("\\s+");
+				for (String setting : settingsList) {
+					boolean found = false;
+					for (Setting s : supportedSettings) {
+						if (setting.startsWith(s.key)) {
+							drawCmd = s.parse(setting, drawHandler, drawCmd);
+							found = true;
+							break;
+						}
+					}
+					if (!found) {
+						throw new RuntimeException("Drawing command '" + name + "' doesn't support the setting: '" + setting + "'.");
+					}
+				}
+			}
+			drawCmd.run();
 		}
 
 		private Object parse(ParameterType type, String str)
@@ -291,5 +425,36 @@ public class CustomDrawingFacet extends Facet {
 		}
 
 		protected abstract void draw(DrawHandler drawHandler, Object[] parameters);
+
+		private static abstract class RecRunnable {
+			private final RecRunnable inner;
+
+			public RecRunnable(RecRunnable inner) {
+				this.inner = inner;
+			}
+
+			public abstract void run();
+
+			protected void runInner() {
+				if (inner != null) {
+					inner.run();
+				}
+			}
+		}
+
+		public static abstract class Setting {
+			protected String key;
+
+			public Setting(String key) {
+				super();
+				this.key = key;
+			}
+
+			RecRunnable parse(String keyValue, DrawHandler drawHandler, final RecRunnable inner) {
+				return parseValue(keyValue.substring(key.length()), drawHandler, inner);
+			}
+
+			abstract RecRunnable parseValue(String value, DrawHandler drawHandler, final RecRunnable inner);
+		}
 	}
 }
