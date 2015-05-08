@@ -23,6 +23,12 @@
 	<property name="dir.export.plugin" location="${dir.export}/plugins" />
 	<property name="elements.src" location="../BaseletElements/src" />
 	<property name="elements.lib" location="../BaseletElements/lib" />
+	<property name="antlr.grammar.folder" location="${elements.src}/com/baselet/element/facet/common/CustomDrawingParser/" />
+	<property name="antlr.grammar.file" value="CustomDrawingParser.g4" />
+	<property name="antlr.grammar.path" location="${antlr.grammar.folder}/${antlr.grammar.file}" />
+	<!-- Points to the ANTLR jar file -->
+	<!-- Antlr can be obtained here http://www.antlr.org/ (tested with antlr-4.5-complete.jar) -->
+	<property name="antlr.home.jar" location="${dir.lib}/antlr-4.5-complete.jar" />
 
 	<!-- Classpaths -->
 	<path id="project.classpath.build">
@@ -42,6 +48,13 @@
 	<path id="project.classpath.lib">
 		<fileset dir="${dir.lib}" includes="*.jar" />
 	</path>
+	
+	<!-- ANTLR -->
+	<target name="antlr_generate">
+		<java classname="org.antlr.v4.Tool" fork="true" failonerror="true" classpath="${antlr.home.jar}" dir="${antlr.grammar.folder}">
+			<arg value="${antlr.grammar.file}"/>
+		</java>
+	</target>
 
 	<!-- Update MANIFEST.MF and includes new version and libs -->
 	<target name="update_manifest">
