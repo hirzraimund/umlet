@@ -42,12 +42,30 @@ public class CustomJsElementGwt extends CustomElement {
 		// getPanelAttributes is not working since the javascript function myDraw5 can't be called with strings which contain \n.
 		// Therefore it is necessary to build an extra string with \\n, which can be parsed
 		StringBuilder strBuilder = new StringBuilder();
+		String markup = null;
+		String js;
 		for (String e : getPanelAttributesAsList())
 		{
-			strBuilder.append(e);
-			strBuilder.append("\\n");
+			if (markup == null && "customcode=".equals(e)) {
+				markup = strBuilder.substring(0, strBuilder.length() - 2);
+				strBuilder = new StringBuilder();
+			}
+			else {
+				strBuilder.append(e);
+				if (markup == null) {
+					strBuilder.append("\\n");
+				}
+			}
 		}
-		myDraw5(strBuilder.substring(0, strBuilder.length() - 2), js);
+		if (markup == null) {
+			markup = strBuilder.substring(0, strBuilder.length() - 2);
+			js = "";
+		}
+		else {
+			js = strBuilder.toString();
+		}
+		// myDraw5(strBuilder.substring(0, strBuilder.length() - 2), this.js);
+		myDraw5(markup, js);
 	}
 
 	private native void myDraw5(String myproperties2, String js2) /*-{
@@ -55,6 +73,18 @@ public class CustomJsElementGwt extends CustomElement {
 		var drawHandler = that.@com.baselet.gwt.client.element.CustomJsElementGwt::getDrawHandler()();
 		$wnd.drawRect = $entry(function(x, y, width, height) {
 			drawHandler.@com.baselet.gwt.client.element.DrawHandlerGwt::drawRectangle(DDDD)(x, y, width, height);
+		});
+
+		$wnd.drawEllipse = $entry(function(x, y, width, height) {
+			drawHandler.@com.baselet.gwt.client.element.DrawHandlerGwt::drawEllipse(DDDD)(x, y, width, height);
+		});
+		var dh = new Object();
+		dh.drawRect = $entry(function(x, y, width, height) {
+			drawHandler.@com.baselet.gwt.client.element.DrawHandlerGwt::drawRectangle(DDDD)(x, y, width, height);
+		});
+
+		dh.drawEllipse = $entry(function(x, y, width, height) {
+			drawHandler.@com.baselet.gwt.client.element.DrawHandlerGwt::drawEllipse(DDDD)(x, y, width, height);
 		});
 
 		//console.log('drawHandler');
